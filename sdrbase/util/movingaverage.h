@@ -79,9 +79,10 @@ class MovingAverageUtilVar
     MovingAverageUtilVar(unsigned int size)
       : m_num_samples(0), m_index(0), m_total(0)
     {
-        m_samples.resize(size);
-		m_samplesSizeInvF = 1.0f / size;
-		m_samplesSizeInvD = 1.0 / size;
+		const unsigned int validSize = std::max(1U, size);
+        m_samples.resize(validSize);
+		m_samplesSizeInvF = 1.0f / validSize;
+		m_samplesSizeInvD = 1.0 / validSize;
 	}
 
     void reset()
@@ -94,9 +95,10 @@ class MovingAverageUtilVar
     void resize(unsigned int size)
     {
         reset();
-        m_samples.resize(size);
-		m_samplesSizeInvF = 1.0f / size;
-		m_samplesSizeInvD = 1.0 / size;
+		const unsigned int validSize = std::max(1U, size);
+        m_samples.resize(validSize);
+		m_samplesSizeInvF = 1.0f / validSize;
+		m_samplesSizeInvD = 1.0 / validSize;
 	}
 
     unsigned int size() const

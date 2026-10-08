@@ -3702,7 +3702,6 @@ void FT8Decoder::entry(
         QObject::connect(th, &QThread::started, ft8, &FT8::start_work);
         QObject::connect(ft8, &FT8::finished, th, &QThread::quit, Qt::DirectConnection);
         QObject::connect(th, &QThread::finished, ft8, &QObject::deleteLater);
-        QObject::connect(th, &QThread::finished, th, &QThread::deleteLater);
         th->start();
     }
 }
@@ -3713,15 +3712,19 @@ void FT8Decoder::wait(double time_left)
 
     while (threads.size() != 0)
     {
-        bool success = threads.front()->wait(thread_timeout);
+        QThread *thread = threads.front();
+        bool success = thread->wait(thread_timeout);
 
         if (!success)
         {
             qDebug("FT8::FT8Decoder::wait: thread timed out");
+            thread->quit();
+            thread->wait();
             thread_timeout = 50; // only 50ms for the rest
         }
 
         threads.erase(threads.begin());
+        delete thread;
     }
 }
 
@@ -3729,9 +3732,11 @@ void FT8Decoder::forceQuit()
 {
     while (threads.size() != 0)
     {
-        threads.front()->quit();
-        threads.front()->wait();
+        QThread *thread = threads.front();
+        thread->quit();
+        thread->wait();
         threads.erase(threads.begin());
+        delete thread;
     }
 }
 

@@ -114,17 +114,31 @@ public:
 
         if (d.getVersion() == 1)
         {
+            int size;
             unsigned int tmpUInt;
             QByteArray buf;
 
-            d.readS32(1, &m_size, m_data.size()/2);
-            m_data.resize(2*m_size);
+            d.readS32(1, &size, m_data.size()/2);
             d.readU32(2, &tmpUInt, 0);
-            m_currentPosition = tmpUInt;
             d.readBlob(3, &buf);
-            //qDebug("DoubleBufferSimple::deserialize: m_data.size(): %u buf.size(): %d", m_data.size(), buf.size());
-            //std::copy(reinterpret_cast<char *>(m_data.data()), buf.data(), buf.data() + buf.size()); // bug
-            memcpy(reinterpret_cast<char *>(m_data.data()), buf.data(), buf.size());
+
+            std::vector<T> newData;
+            if ((size < 0)
+                || (tmpUInt > static_cast<unsigned int>(size))
+                || (static_cast<std::size_t>(size) > newData.max_size() / 2)
+                || (static_cast<qint64>(buf.size()) != 2LL * size * sizeof(T)))
+            {
+                return false;
+            }
+
+            newData.resize(2 * static_cast<std::size_t>(size));
+            if (!buf.isEmpty()) {
+                memcpy(reinterpret_cast<char *>(newData.data()), buf.constData(), buf.size());
+            }
+
+            m_size = size;
+            m_currentPosition = tmpUInt;
+            m_data.swap(newData);
 
             return true;
         }

@@ -38,11 +38,15 @@ bool DeviceBladeRF1::open_bladerf(struct bladerf **dev, const char *serial)
     {
         qCritical("DeviceBladeRF1::open_bladerf: failed to check FPGA state: %s",
                 bladerf_strerror(fpga_loaded));
+        bladerf_close(*dev);
+        *dev = nullptr;
         return false;
     }
     else if (fpga_loaded == 0)
     {
         qCritical("DeviceBladeRF1::start: the device's FPGA is not loaded.");
+        bladerf_close(*dev);
+        *dev = nullptr;
         return false;
     }
 
@@ -183,4 +187,3 @@ unsigned int BladerfBandwidths::getNbBandwidths()
 {
     return BladerfBandwidths::m_nb_halfbw;
 }
-

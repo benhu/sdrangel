@@ -66,8 +66,8 @@ LimeSDRMIMO::LimeSDRMIMO(DeviceAPI *deviceAPI) :
     m_mimoType = MIMOHalfSynchronous;
     m_sampleMIFifo.init(2, 4096 * 64);
     m_sampleMOFifo.init(2, 4096 * 64);
-    m_deviceAPI->setNbSourceStreams(m_deviceParams->m_nbRxChannels);
-    m_deviceAPI->setNbSinkStreams(m_deviceParams->m_nbTxChannels);
+    m_deviceAPI->setNbSourceStreams(m_open ? m_deviceParams->m_nbRxChannels : 0);
+    m_deviceAPI->setNbSinkStreams(m_open ? m_deviceParams->m_nbTxChannels : 0);
     m_networkManager = new QNetworkAccessManager();
     QObject::connect(
         m_networkManager,
@@ -101,7 +101,10 @@ bool LimeSDRMIMO::openDevice()
     memcpy(serial, serialBytes.constData(), serialBytes.size() + 1);
     m_deviceParams = new DeviceLimeSDRParams();
 
-    if (!m_deviceParams->open(serial)) {
+    if (!m_deviceParams->open(serial))
+    {
+        delete m_deviceParams;
+        m_deviceParams = nullptr;
         return false;
     }
 

@@ -3532,7 +3532,6 @@ void FT4Decoder::entry(
         QObject::connect(th, &QThread::started, ft4, &FT4::start_work);
         QObject::connect(ft4, &FT4::finished, th, &QThread::quit, Qt::DirectConnection);
         QObject::connect(th, &QThread::finished, ft4, &QObject::deleteLater);
-        QObject::connect(th, &QThread::finished, th, &QThread::deleteLater);
         th->start();
     }
 }
@@ -3543,15 +3542,19 @@ void FT4Decoder::wait(double time_left)
 
     while (threads.size() != 0)
     {
-        bool success = threads.front()->wait(thread_timeout);
+        QThread *thread = threads.front();
+        bool success = thread->wait(thread_timeout);
 
         if (!success)
         {
             qDebug("FT4::FT4Decoder::wait: thread timed out");
+            thread->quit();
+            thread->wait();
             thread_timeout = 50; // only 50ms for the rest
         }
 
         threads.erase(threads.begin());
+        delete thread;
     }
 }
 
@@ -3559,9 +3562,11 @@ void FT4Decoder::forceQuit()
 {
     while (threads.size() != 0)
     {
-        threads.front()->quit();
-        threads.front()->wait();
+        QThread *thread = threads.front();
+        thread->quit();
+        thread->wait();
         threads.erase(threads.begin());
+        delete thread;
     }
 }
 

@@ -115,11 +115,13 @@ bool DeviceBladeRF2::open(const char *serial)
     {
         qCritical("DeviceBladeRF2::open: failed to check FPGA state: %s",
                 bladerf_strerror(fpga_loaded));
+        close();
         return false;
     }
     else if (fpga_loaded == 0)
     {
         qCritical("DeviceBladeRF2::open: the device's FPGA is not loaded.");
+        close();
         return false;
     }
 

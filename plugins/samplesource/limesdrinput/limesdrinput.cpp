@@ -219,7 +219,12 @@ bool LimeSDRInput::openDevice()
         }
         memcpy(serial, serialBytes.constData(), serialBytes.size() + 1);
         m_deviceShared.m_deviceParams = new DeviceLimeSDRParams();
-        m_deviceShared.m_deviceParams->open(serial);
+        if (!m_deviceShared.m_deviceParams->open(serial))
+        {
+            delete m_deviceShared.m_deviceParams;
+            m_deviceShared.m_deviceParams = nullptr;
+            return false;
+        }
         m_deviceShared.m_channel = requestedChannel; // acknowledge the requested channel
     }
 
