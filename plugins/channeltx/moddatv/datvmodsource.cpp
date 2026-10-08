@@ -371,11 +371,11 @@ void DATVModSource::modulateSample()
                 int size = ba.size();
                 char *data = ba.data();
 
-                if (size <= (int)sizeof(m_udpBuffer))
+                if ((size >= (int)sizeof(m_mpegTS)) && (size <= (int)sizeof(m_udpBuffer)))
                 {
                     memcpy(m_mpegTS, data, sizeof(m_mpegTS));
 
-                    if (size >= (int)sizeof(m_mpegTS)) {
+                    if (size > (int)sizeof(m_mpegTS)) {
                         memcpy(&m_udpBuffer[0], &data[sizeof(m_mpegTS)], size - sizeof(m_mpegTS));
                     }
 
@@ -385,6 +385,10 @@ void DATVModSource::modulateSample()
                     if (size % sizeof(m_mpegTS) != 0) {
                         qWarning() << "DATVModSource::modulateSample: UDP packet size (" << size << ") is not a multiple of " << sizeof(m_mpegTS);
                     }
+                }
+                else if (size < (int)sizeof(m_mpegTS))
+                {
+                    qWarning() << "DATVModSource::modulateSample: UDP packet size (" << size << ") is smaller than " << sizeof(m_mpegTS);
                 }
                 else
                 {

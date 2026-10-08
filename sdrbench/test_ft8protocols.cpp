@@ -19,6 +19,7 @@
 #include <fstream>
 #include <regex>
 #include <random>
+#include <vector>
 
 #include <QTextStream>
 
@@ -256,17 +257,21 @@ void TestFT8Protocols::testOnesZeroes(const QStringList& argElements)
         return;
     }
 
-    if (nbBits < 2)
+    if ((nbBits < 2) || (nbBits > 12))
     {
-        qWarning("TestFT8Protocols::testOnesZeroes: nbBits too small: %d", nbBits);
+        qWarning("TestFT8Protocols::testOnesZeroes: invalid number of bits: %d", nbBits);
         return;
     }
 
-    bitIndex = bitIndex > nbBits - 1 ? nbBits - 1 : bitIndex;
+    if ((bitIndex < 0) || (bitIndex >= nbBits))
+    {
+        qWarning("TestFT8Protocols::testOnesZeroes: invalid bit index: %d", bitIndex);
+        return;
+    }
 
-    int *ones = new int[1<<nbBits];
-    int *zeroes = new int[1<<nbBits];
-    FT8::FT8::set_ones_zeroes(ones, zeroes, nbBits, bitIndex);
+    std::vector<int> ones(1 << nbBits);
+    std::vector<int> zeroes(1 << nbBits);
+    FT8::FT8::set_ones_zeroes(ones.data(), zeroes.data(), nbBits, bitIndex);
     QString s;
     QTextStream os(&s);
 

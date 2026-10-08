@@ -77,9 +77,10 @@ void DeviceMetisScan::scan()
 
     // wait for timeout before returning
     QEventLoop loop;
-    QTimer *timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), &loop, SLOT(quit()));
-    timer->start(500); // 500 ms timeout
+    QTimer timer;
+    timer.setSingleShot(true);
+    connect(&timer, SIGNAL(timeout()), &loop, SLOT(quit()));
+    timer.start(500); // 500 ms timeout
 
     qDebug() << "DeviceMetisScan::scan: start 0.5 second timeout loop";
     // Execute the event loop here and wait for the timeout to trigger
@@ -132,7 +133,8 @@ void DeviceMetisScan::readyRead()
     quint16 metisPort;
     unsigned char buffer[1024];
 
-    if (m_udpSocket.readDatagram((char*) &buffer, (qint64) sizeof(buffer), &metisAddress, &metisPort) < 0)
+    qint64 size = m_udpSocket.readDatagram((char*) &buffer, (qint64) sizeof(buffer), &metisAddress, &metisPort);
+    if (size < 0)
     {
         qDebug() << "DeviceMetisScan::readyRead: readDatagram failed " << m_udpSocket.errorString();
         return;
@@ -140,7 +142,7 @@ void DeviceMetisScan::readyRead()
 
     QString metisIP = QString("%1:%2").arg(metisAddress.toString()).arg(metisPort);
 
-    if (buffer[0] == 0xEF && buffer[1] == 0xFE)
+    if ((size >= 3) && (buffer[0] == 0xEF) && (buffer[1] == 0xFE))
     {
         switch(buffer[2])
         {
@@ -149,6 +151,11 @@ void DeviceMetisScan::readyRead()
                 break;
             case 2:  // response to a discovery packet
             {
+                if (size < 9)
+                {
+                    qDebug() << "DeviceMetisScan::readyRead: received truncated discovery response";
+                    break;
+                }
                 QByteArray array((char *) &buffer[3], 6);
                 QString serial = QString(array.toHex());
                 m_scans.append(DeviceScan(
@@ -156,7 +163,6 @@ void DeviceMetisScan::readyRead()
                     metisAddress,
                     metisPort
                 ));
-                m_serialMap.insert(serial, &m_scans.back());
                 qDebug() << "DeviceMetisScan::readyRead: found Metis at:" << metisIP << "MAC:" << serial;
             }
                 break;

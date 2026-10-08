@@ -101,7 +101,13 @@ void PskReporterWorker::processFT8Messages(const QList<FT8Message>& ft8Messages,
 
         m_reportedCalls.insert(msg.call2);
 
-        if (txPtr > 1200)
+        const QByteArray callsign = msg.call2.toUtf8().left(254);
+        const QByteArray txMode = m_txMode.toUtf8().left(254);
+        const QByteArray locator = msg.loc.toUtf8().left(254);
+        const uint32_t recordSize = 1 + callsign.size() + 4 + 1 + 1 + txMode.size() + 1 + locator.size() + 1 + 4;
+
+        // Keep enough room for this record and the final alignment padding.
+        if (txPtr + recordSize > sizeof(txInfoData) - 3)
         {
             sendMessageToPskReporter(txPtr);
             txPtr = 4;
@@ -109,10 +115,10 @@ void PskReporterWorker::processFT8Messages(const QList<FT8Message>& ft8Messages,
         }
 
         // Station callsign
-        *(uint8_t  *)&txInfoData[txPtr] = (uint8_t) msg.call2.size();
+        *(uint8_t  *)&txInfoData[txPtr] = (uint8_t) callsign.size();
         txPtr += 1;
-        memcpy(&txInfoData[txPtr], msg.call2.toStdString().c_str(), msg.call2.size());
-        txPtr += msg.call2.size();
+        memcpy(&txInfoData[txPtr], callsign.constData(), callsign.size());
+        txPtr += callsign.size();
 
         // Station frequency
         uint32_t freq = static_cast<uint32_t>(baseFrequency + msg.df);
@@ -126,7 +132,6 @@ void PskReporterWorker::processFT8Messages(const QList<FT8Message>& ft8Messages,
         txPtr +=1;
 
         // Station Mode
-        const QByteArray txMode = m_txMode.toUtf8();
         const size_t modeLen = txMode.size();
         *(uint8_t  *)&txInfoData[txPtr] = (uint8_t)modeLen;
         txPtr += 1;
@@ -134,10 +139,10 @@ void PskReporterWorker::processFT8Messages(const QList<FT8Message>& ft8Messages,
         txPtr += modeLen;
 
         // Station locator
-        *(uint8_t  *)&txInfoData[txPtr] = (uint8_t) msg.loc.size();
+        *(uint8_t  *)&txInfoData[txPtr] = (uint8_t) locator.size();
         txPtr += 1;
-        memcpy(&txInfoData[txPtr], msg.loc.toStdString().c_str(), msg.loc.size());
-        txPtr += msg.loc.size();
+        memcpy(&txInfoData[txPtr], locator.constData(), locator.size());
+        txPtr += locator.size();
 
         /* Station Info -- Static length (1) */
         *(uint8_t  *)&txInfoData[txPtr] = (uint8_t)1;
@@ -181,30 +186,34 @@ void PskReporterWorker::sendMessageToPskReporter(uint32_t txPtr)
     *(uint32_t *)&headerData[hPtr] = SwapEndian32(m_identifier);
     hPtr += 4;
 
-    char rxInfoData[256] = {0};
+    char rxInfoData[1024] = {0};
     uint32_t rxPtr = 0;
 
     *(uint16_t *)&rxInfoData[rxPtr] = SwapEndian16(0x9992);
     rxPtr += 2;
     rxPtr += 2;  // Skip the size block, adjust later
 
+    const QByteArray callsign = m_myCallsign.toUtf8().left(254);
+    const QByteArray locator = m_myLocator.toUtf8().left(254);
+    const QByteArray decoderInfo = m_decoderInfo.toUtf8().left(254);
+
     // Receiver callsign
-    *(uint8_t  *)&rxInfoData[rxPtr] = (uint8_t) m_myCallsign.size();
+    *(uint8_t  *)&rxInfoData[rxPtr] = (uint8_t) callsign.size();
     rxPtr += 1;
-    memcpy(&rxInfoData[rxPtr], m_myCallsign.toStdString().c_str(), m_myCallsign.size());
-    rxPtr += m_myCallsign.size();
+    memcpy(&rxInfoData[rxPtr], callsign.constData(), callsign.size());
+    rxPtr += callsign.size();
 
     // Receiver locator
-    *(uint8_t  *)&rxInfoData[rxPtr] = (uint8_t) m_myLocator.size();
+    *(uint8_t  *)&rxInfoData[rxPtr] = (uint8_t) locator.size();
     rxPtr += 1;
-    memcpy(&rxInfoData[rxPtr], m_myLocator.toStdString().c_str(), m_myLocator.size());
-    rxPtr += m_myLocator.size();
+    memcpy(&rxInfoData[rxPtr], locator.constData(), locator.size());
+    rxPtr += locator.size();
 
     // Receiver decoder software
-    *(uint8_t  *)&rxInfoData[rxPtr] = (uint8_t) m_decoderInfo.size();
+    *(uint8_t  *)&rxInfoData[rxPtr] = (uint8_t) decoderInfo.size();
     rxPtr += 1;
-    memcpy(&rxInfoData[rxPtr], m_decoderInfo.toStdString().c_str(), m_decoderInfo.size());
-    rxPtr += m_decoderInfo.size();
+    memcpy(&rxInfoData[rxPtr], decoderInfo.constData(), decoderInfo.size());
+    rxPtr += decoderInfo.size();
 
     // Padding to 4-byte boundary
     if ((rxPtr % 4) > 0)

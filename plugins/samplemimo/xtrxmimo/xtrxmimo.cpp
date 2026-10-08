@@ -15,6 +15,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.          //
 ///////////////////////////////////////////////////////////////////////////////////
 
+#include <QByteArray>
 #include <QDebug>
 #include <QNetworkReply>
 #include <QNetworkAccessManager>
@@ -85,10 +86,9 @@ XTRXMIMO::~XTRXMIMO()
 bool XTRXMIMO::openDevice()
 {
     m_deviceShared.m_dev = new DeviceXTRX();
-    char serial[256];
-    strcpy(serial, qPrintable(m_deviceAPI->getSamplingDeviceSerial()));
+    const QByteArray serial = m_deviceAPI->getSamplingDeviceSerial().toUtf8();
 
-    if (!m_deviceShared.m_dev->open(serial))
+    if (!m_deviceShared.m_dev->open(serial.constData()))
     {
         qCritical("XTRXMIMO::openDevice: cannot open XTRX device");
         return false;

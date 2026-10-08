@@ -15,6 +15,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.          //
 ///////////////////////////////////////////////////////////////////////////////////
 
+#include <QByteArray>
 #include <QDebug>
 #include <QNetworkReply>
 #include <QNetworkAccessManager>
@@ -90,9 +91,15 @@ LimeSDRMIMO::~LimeSDRMIMO()
 
 bool LimeSDRMIMO::openDevice()
 {
-    m_deviceParams = new DeviceLimeSDRParams();
     char serial[256];
-    strcpy(serial, qPrintable(m_deviceAPI->getSamplingDeviceSerial()));
+    const QByteArray serialBytes = m_deviceAPI->getSamplingDeviceSerial().toUtf8();
+    if (serialBytes.size() >= static_cast<int>(sizeof(serial)))
+    {
+        qCritical("LimeSDRMIMO::openDevice: device serial is too long");
+        return false;
+    }
+    memcpy(serial, serialBytes.constData(), serialBytes.size() + 1);
+    m_deviceParams = new DeviceLimeSDRParams();
 
     if (!m_deviceParams->open(serial)) {
         return false;

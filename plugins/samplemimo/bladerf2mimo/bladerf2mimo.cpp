@@ -18,6 +18,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include <QByteArray>
 #include <QDebug>
 #include <QNetworkReply>
 #include <QNetworkAccessManager>
@@ -100,10 +101,9 @@ void BladeRF2MIMO::destroy()
 bool BladeRF2MIMO::openDevice()
 {
     m_dev = new DeviceBladeRF2();
-    char serial[256];
-    strcpy(serial, qPrintable(m_deviceAPI->getSamplingDeviceSerial()));
+    const QByteArray serial = m_deviceAPI->getSamplingDeviceSerial().toUtf8();
 
-    if (!m_dev->open(serial))
+    if (!m_dev->open(serial.constData()))
     {
         qCritical("BladeRF2MIMO::openDevice: cannot open BladeRF2 device");
         return false;

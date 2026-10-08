@@ -127,20 +127,27 @@ void RemoteSourceWorker::handleInputMessages()
 
 void RemoteSourceWorker::dataReadyRead()
 {
-    m_udpReadBytes = 0;
-
 	while (m_socket.hasPendingDatagrams())
 	{
 		qint64 pendingDataSize = m_socket.pendingDatagramSize();
         QHostAddress sender;
-		m_udpReadBytes += m_socket.readDatagram(&m_udpBuf[m_udpReadBytes], pendingDataSize, &sender, nullptr);
+		m_udpReadBytes = m_socket.readDatagram(m_udpBuf, RemoteUdpSize, &sender, nullptr);
 
 		if (m_udpReadBytes == RemoteUdpSize)
         {
 		    processData();
-		    m_udpReadBytes = 0;
+		}
+		else if (m_udpReadBytes < 0)
+		{
+		    qWarning("RemoteSourceWorker::dataReadyRead: UDP read error");
+		}
+		else
+		{
+		    qWarning("RemoteSourceWorker::dataReadyRead: dropped UDP datagram with invalid size %lld (expected %d)", pendingDataSize, RemoteUdpSize);
 		}
 	}
+
+	m_udpReadBytes = 0;
 }
 
 void RemoteSourceWorker::processData()

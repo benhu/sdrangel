@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <QMutexLocker>
+#include <QByteArray>
 #include <QDebug>
 #include <QNetworkReply>
 #include <QBuffer>
@@ -209,9 +210,15 @@ bool LimeSDRInput::openDevice()
     {
         qDebug("LimeSDRInput::openDevice: open device here");
 
-        m_deviceShared.m_deviceParams = new DeviceLimeSDRParams();
         char serial[256];
-        strcpy(serial, qPrintable(m_deviceAPI->getSamplingDeviceSerial()));
+        const QByteArray serialBytes = m_deviceAPI->getSamplingDeviceSerial().toUtf8();
+        if (serialBytes.size() >= static_cast<int>(sizeof(serial)))
+        {
+            qCritical("LimeSDRInput::openDevice: device serial is too long");
+            return false;
+        }
+        memcpy(serial, serialBytes.constData(), serialBytes.size() + 1);
+        m_deviceShared.m_deviceParams = new DeviceLimeSDRParams();
         m_deviceShared.m_deviceParams->open(serial);
         m_deviceShared.m_channel = requestedChannel; // acknowledge the requested channel
     }

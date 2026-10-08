@@ -19,6 +19,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include <QByteArray>
 #include <QDebug>
 #include <QMutexLocker>
 #include <QNetworkReply>
@@ -140,10 +141,9 @@ bool BladeRF2Output::openDevice()
         qDebug("BladeRF2Output::openDevice: open device here");
 
         m_deviceShared.m_dev = new DeviceBladeRF2();
-        char serial[256];
-        strcpy(serial, qPrintable(m_deviceAPI->getSamplingDeviceSerial()));
+        const QByteArray serial = m_deviceAPI->getSamplingDeviceSerial().toUtf8();
 
-        if (!m_deviceShared.m_dev->open(serial))
+        if (!m_deviceShared.m_dev->open(serial.constData()))
         {
             qCritical("BladeRF2Output::openDevice: cannot open BladeRF2 device");
             return false;

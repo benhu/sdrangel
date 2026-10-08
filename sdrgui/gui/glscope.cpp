@@ -758,8 +758,9 @@ void GLScope::paintGL()
             int start = (m_timeOfsProMill / 1000.0) * m_traceSize;
             int end = std::min(start + m_traceSize / m_timeBase, m_traceSize);
 
-            if (end - start < 2)
+            if ((end - start < 2) && (start > 0)) {
                 start--;
+            }
 
             //GLfloat q3[2*(end - start)];
             GLfloat *q3 = m_q3Polar.m_array;

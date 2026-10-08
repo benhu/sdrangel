@@ -194,18 +194,21 @@ void RemoteInputUDPHandler::applyUDPLink(const QString& address, quint16 port, c
 
 void RemoteInputUDPHandler::dataReadyRead()
 {
-    m_udpReadBytes = 0;
-
 	while (m_dataSocket->hasPendingDatagrams() && m_dataConnected)
 	{
 		qint64 pendingDataSize = m_dataSocket->pendingDatagramSize();
-		m_udpReadBytes += m_dataSocket->readDatagram(&m_udpBuf[m_udpReadBytes], pendingDataSize, &m_remoteAddress, 0);
+		m_udpReadBytes = m_dataSocket->readDatagram(m_udpBuf, RemoteUdpSize, &m_remoteAddress, 0);
 
 		if (m_udpReadBytes == RemoteUdpSize) {
 		    processData();
-		    m_udpReadBytes = 0;
+		} else if (m_udpReadBytes < 0) {
+		    qWarning("RemoteInputUDPHandler::dataReadyRead: UDP read error");
+		} else {
+		    qWarning("RemoteInputUDPHandler::dataReadyRead: dropped UDP datagram with invalid size %lld (expected %d)", pendingDataSize, RemoteUdpSize);
 		}
 	}
+
+	m_udpReadBytes = 0;
 }
 
 void RemoteInputUDPHandler::processData()

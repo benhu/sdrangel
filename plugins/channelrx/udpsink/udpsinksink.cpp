@@ -20,6 +20,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QBuffer>
+#include <QtEndian>
 
 #include "dsp/basebandsamplesink.h"
 #include "util/db.h"
@@ -285,8 +286,16 @@ void UDPSinkSink::audioReadyRead()
 	while (m_audioSocket->hasPendingDatagrams())
 	{
 	    qint64 pendingDataSize = m_audioSocket->pendingDatagramSize();
-	    qint64 udpReadBytes = m_audioSocket->readDatagram(m_udpAudioBuf, pendingDataSize, 0, 0);
+	    qint64 udpReadBytes = m_audioSocket->readDatagram(m_udpAudioBuf, m_udpAudioPayloadSize, 0, 0);
 		//qDebug("UDPSink::audioReadyRead: %lld", udpReadBytes);
+
+        if (udpReadBytes < 0) {
+            continue;
+        }
+
+        if (pendingDataSize > m_udpAudioPayloadSize) {
+            qWarning("UDPSinkSink::audioReadyRead: truncated oversized UDP audio datagram (%lld bytes)", pendingDataSize);
+        }
 
 		if (m_settings.m_audioActive)
 		{
@@ -294,8 +303,8 @@ void UDPSinkSink::audioReadyRead()
 			{
 				for (int i = 0; i < udpReadBytes - 3; i += 4)
 				{
-					qint16 l_sample = (qint16) *(&m_udpAudioBuf[i]);
-					qint16 r_sample = (qint16) *(&m_udpAudioBuf[i+2]);
+					qint16 l_sample = qFromLittleEndian<qint16>(reinterpret_cast<const uchar*>(&m_udpAudioBuf[i]));
+					qint16 r_sample = qFromLittleEndian<qint16>(reinterpret_cast<const uchar*>(&m_udpAudioBuf[i+2]));
 					m_audioBuffer[m_audioBufferFill].l  = l_sample * m_settings.m_volume;
 					m_audioBuffer[m_audioBufferFill].r  = r_sample * m_settings.m_volume;
 					++m_audioBufferFill;
@@ -316,7 +325,7 @@ void UDPSinkSink::audioReadyRead()
 			{
 				for (int i = 0; i < udpReadBytes - 1; i += 2)
 				{
-					qint16 sample = (qint16) *(&m_udpAudioBuf[i]);
+					qint16 sample = qFromLittleEndian<qint16>(reinterpret_cast<const uchar*>(&m_udpAudioBuf[i]));
 					m_audioBuffer[m_audioBufferFill].l  = sample * m_settings.m_volume;
 					m_audioBuffer[m_audioBufferFill].r  = sample * m_settings.m_volume;
 					++m_audioBufferFill;

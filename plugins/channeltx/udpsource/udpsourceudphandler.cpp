@@ -112,11 +112,17 @@ void UDPSourceUDPHandler::dataReadyRead()
     while (m_dataSocket->hasPendingDatagrams() && m_dataConnected)
     {
         qint64 pendingDataSize = m_dataSocket->pendingDatagramSize();
-        qint64 bytesRead = m_dataSocket->readDatagram(&m_udpDump[m_udpDumpIndex], pendingDataSize, &m_remoteAddress, &m_remotePort);
+        const qint64 remaining = sizeof(m_udpDump) - m_udpDumpIndex;
+        qint64 bytesRead = m_dataSocket->readDatagram(&m_udpDump[m_udpDumpIndex], remaining, &m_remoteAddress, &m_remotePort);
 
         if (bytesRead < 0)
         {
             qWarning("UDPSourceUDPHandler::dataReadyRead: UDP read error");
+        }
+        else if (pendingDataSize > remaining)
+        {
+            qWarning("UDPSourceUDPHandler::dataReadyRead: dropped oversized UDP datagram (%lld bytes)", pendingDataSize);
+            m_udpDumpIndex = 0;
         }
         else
         {
@@ -327,6 +333,5 @@ bool UDPSourceUDPHandler::handleMessage(const Message& cmd)
         return false;
     }
 }
-
 
 

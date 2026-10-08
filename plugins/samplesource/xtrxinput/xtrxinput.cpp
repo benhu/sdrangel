@@ -20,6 +20,7 @@
 #include "xtrx_api.h"
 
 #include <QMutexLocker>
+#include <QByteArray>
 #include <QDebug>
 #include <QNetworkReply>
 #include <QBuffer>
@@ -153,10 +154,9 @@ bool XTRXInput::openDevice()
         qDebug("XTRXInput::openDevice: open device here");
 
         m_deviceShared.m_dev = new DeviceXTRX();
-        char serial[256];
-        strcpy(serial, qPrintable(m_deviceAPI->getSamplingDeviceSerial()));
+        const QByteArray serial = m_deviceAPI->getSamplingDeviceSerial().toUtf8();
 
-        if (!m_deviceShared.m_dev->open(serial))
+        if (!m_deviceShared.m_dev->open(serial.constData()))
         {
             qCritical("XTRXInput::openDevice: cannot open BladeRF2 device");
             return false;

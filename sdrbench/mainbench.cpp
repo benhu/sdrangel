@@ -100,7 +100,7 @@ void MainBench::testDecimateII(ParserBench::TestType testType)
     qint16 *buf = new qint16[m_parser.getNbSamples()*2];
     m_convertBuffer.resize(m_parser.getNbSamples()/(1<<m_parser.getLog2Factor()));
     auto my_rand = std::bind(m_uniform_distribution_s16, m_generator);
-    std::generate(buf, buf + m_parser.getNbSamples()*2 - 1, my_rand);
+    std::generate(buf, buf + m_parser.getNbSamples()*2, my_rand);
 
     qDebug() << "MainBench::testDecimateII: run test";
 
@@ -143,7 +143,7 @@ void MainBench::testDecimateIF()
     qint16 *buf = new qint16[m_parser.getNbSamples()*2];
     m_convertBufferF.resize(m_parser.getNbSamples()/(1<<m_parser.getLog2Factor()));
     auto my_rand = std::bind(m_uniform_distribution_s16, m_generator);
-    std::generate(buf, buf + m_parser.getNbSamples()*2 - 1, my_rand);
+    std::generate(buf, buf + m_parser.getNbSamples()*2, my_rand);
 
     qDebug() << "MainBench::testDecimateIF: run test";
 
@@ -170,7 +170,7 @@ void MainBench::testDecimateFI()
     float *buf = new float[m_parser.getNbSamples()*2];
     m_convertBuffer.resize(m_parser.getNbSamples()/(1<<m_parser.getLog2Factor()));
     auto my_rand = std::bind(m_uniform_distribution_f, m_generator);
-    std::generate(buf, buf + m_parser.getNbSamples()*2 - 1, my_rand); // make sure data is in [-1.0..1.0] range
+    std::generate(buf, buf + m_parser.getNbSamples()*2, my_rand); // make sure data is in [-1.0..1.0] range
 
     qDebug() << "MainBench::testDecimateFI: run test";
 
@@ -197,7 +197,7 @@ void MainBench::testDecimateFF()
     float *buf = new float[m_parser.getNbSamples()*2];
     m_convertBufferF.resize(m_parser.getNbSamples()/(1<<m_parser.getLog2Factor()));
     auto my_rand = std::bind(m_uniform_distribution_f, m_generator);
-    std::generate(buf, buf + m_parser.getNbSamples()*2 - 1, my_rand); // make sure data is in [-1.0..1.0] range
+    std::generate(buf, buf + m_parser.getNbSamples()*2, my_rand); // make sure data is in [-1.0..1.0] range
 
     qDebug() << "MainBench::testDecimateFF: run test";
 

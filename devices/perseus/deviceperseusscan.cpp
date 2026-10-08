@@ -69,7 +69,7 @@ bool DevicePerseusScan::scan(int nbDevices)
 			std::stringstream ss;
 			ss <<  prodid.sn << "-" << std::hex << sigA << "-" << sigB << "-" << sigC;
 			m_scans.push_back({ss.str(), prodid.sn, deviceIndex});
-			m_serialMap[m_scans.back().m_serial] = &m_scans.back();
+			m_serialMap[m_scans.back().m_serial] = m_scans.back().m_sequence;
 			perseus_close(descr);
 		}
 	}
@@ -112,11 +112,11 @@ int DevicePerseusScan::getSequenceAt(unsigned int index) const
 
 int DevicePerseusScan::getSequenceFromSerial(const std::string& serial) const
 {
-    std::map<std::string, DeviceScan*>::const_iterator it = m_serialMap.find(serial);
+    std::map<std::string, int>::const_iterator it = m_serialMap.find(serial);
     if (it == m_serialMap.end()) {
         return -1;
     } else {
-        return ((it->second)->m_sequence);
+        return it->second;
     }
 }
 
@@ -129,6 +129,4 @@ void DevicePerseusScan::getSerials(std::vector<std::string>& serials) const
         serials.push_back(it->m_serial);
     }
 }
-
-
 

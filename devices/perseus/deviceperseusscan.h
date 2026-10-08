@@ -49,7 +49,7 @@ public:
 
 private:
     std::vector<DeviceScan> m_scans;
-    std::map<std::string, DeviceScan*> m_serialMap;
+    std::map<std::string, int> m_serialMap;
 };
 
 

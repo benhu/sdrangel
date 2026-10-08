@@ -22,6 +22,9 @@
 #include <QMutex>
 #include <QFileInfo>
 
+#include <algorithm>
+#include <atomic>
+#include <cstring>
 #include <vector>
 
 #include "dsp/wavfilerecord.h"
@@ -51,32 +54,41 @@ public:
     void setSize(float lengthInSeconds, int sampleRate)
     {
          QMutexLocker locker(&m_mutex);
-         unsigned int newSize = lengthInSeconds * sampleRate * 2;
+         unsigned int newSize = (lengthInSeconds > 0.0f) && (sampleRate > 0)
+             ? static_cast<unsigned int>(lengthInSeconds * sampleRate * 2)
+             : 0;
          unsigned int oldSize = m_data.size();
 
          if (newSize == oldSize) {
              return;
          }
 
-         // Save most recent data
-         if (m_write >= newSize)
+         if (newSize == 0)
          {
-             memmove(&m_data[0], &m_data[m_write-newSize], newSize);
+             m_data.clear();
              m_write = 0;
-             m_count = newSize;
-             m_data.resize(newSize);
+             m_read = 0;
+             m_readOffset = 0;
+             m_count = 0;
+             return;
          }
-         else if (newSize < oldSize)
+
+         const unsigned int retained = std::min(m_count, newSize);
+         std::vector<T> newData(newSize, 0);
+
+         if ((retained > 0) && (oldSize > 0))
          {
-             memmove(&m_data[m_write], &m_data[oldSize-(newSize-m_write)], newSize-m_write);
-             m_count = std::min(m_count, newSize);
-             m_data.resize(newSize);
+             const unsigned int first = (m_write + oldSize - retained) % oldSize;
+             const unsigned int firstLength = std::min(retained, oldSize - first);
+             std::copy_n(m_data.begin() + first, firstLength, newData.begin());
+             std::copy_n(m_data.begin(), retained - firstLength, newData.begin() + firstLength);
          }
-         else
-         {
-             m_data.resize(newSize);
-             memmove(&m_data[newSize-(oldSize-m_write)], &m_data[m_write], oldSize-m_write);
-         }
+
+         m_data.swap(newData);
+         m_count = retained;
+         m_write = retained % newSize;
+         const unsigned int readOffset = std::min(m_readOffset.load(), newSize - 1);
+         m_read = (m_write + newSize - readOffset) % newSize;
     }
 
     // lock()/unlock() should be called before/after calling this function
@@ -97,6 +109,10 @@ public:
     // lock()/unlock() should be called before/after calling this function
     void write(const T* data, unsigned int count)
     {
+        if (m_data.empty()) {
+            return;
+        }
+
         unsigned int totalLen = count;
         while (totalLen > 0)
         {
@@ -121,6 +137,12 @@ public:
     // lock()/unlock() should be called before/after calling this function
     unsigned int read(unsigned int count, const T*& ptr)
     {
+        if (m_data.empty())
+        {
+            ptr = nullptr;
+            return 0;
+        }
+
         unsigned int totalLen = count;
         unsigned int len = std::min((unsigned int)m_data.size() - m_read, totalLen);
         ptr = &m_data[m_read];
@@ -135,6 +157,11 @@ public:
     {
         QMutexLocker locker(&m_mutex);
         m_readOffset = offset;
+        if (m_data.empty())
+        {
+            m_read = 0;
+            return;
+        }
         offset = std::min(offset, (unsigned int)(m_data.size() - 1));
         int read = m_write - offset;
         while (read < 0) {
@@ -152,6 +179,10 @@ public:
     void save(const QString& filename, quint32 sampleRate, quint64 centerFrequency)
     {
         QMutexLocker locker(&m_mutex);
+
+        if (m_data.empty() || (m_count < 2)) {
+            return;
+        }
 
         WavFileRecord wavFile(sampleRate, centerFrequency);
         QString baseName = filename;
@@ -195,9 +226,9 @@ private:
     std::vector<T> m_data;
     unsigned int m_write;       // Write index
     unsigned int m_read;        // Read index
-    unsigned int m_readOffset;
+    std::atomic<unsigned int> m_readOffset;
     unsigned int m_count;       // Count of number of valid samples in the buffer
-    bool m_loop;
+    std::atomic<bool> m_loop;
     QMutex m_mutex;
 
     qint16 conv(quint8 data) const

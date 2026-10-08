@@ -24,6 +24,8 @@
 #include <QNetworkReply>
 #include <QBuffer>
 
+#include <string>
+
 #include "SWGDeviceSettings.h"
 #include "SWGDeviceState.h"
 #include "SWGDeviceReport.h"
@@ -375,12 +377,11 @@ bool PlutoSDROutput::openDevice()
         }
         else
         {
-            char serial[256];
-            strcpy(serial, qPrintable(m_deviceAPI->getSamplingDeviceSerial()));
+            const std::string serial = m_deviceAPI->getSamplingDeviceSerial().toStdString();
 
             if (!m_deviceShared.m_deviceParams->open(serial))
             {
-                qCritical("PlutoSDROutput::openDevice: open serial %s failed", serial);
+                qCritical("PlutoSDROutput::openDevice: open serial %s failed", serial.c_str());
                 return false;
             }
         }

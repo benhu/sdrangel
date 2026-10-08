@@ -24,7 +24,6 @@
 #include <QString>
 #include <QUdpSocket>
 #include <QList>
-#include <QMap>
 
 #include <string>
 #include <vector>
@@ -66,8 +65,6 @@ public slots:
 private:
 	QUdpSocket m_udpSocket;
     QList<DeviceScan> m_scans;
-    QMap<QString, DeviceScan*> m_serialMap;
-
 };
 
 #endif /* DEVICES_METIS_DEVICEMETISSCAN_H_ */

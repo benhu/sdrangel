@@ -615,13 +615,16 @@ void AndroidSDRDriverInputTCPHandler::dataReadyRead()
                 else
                 {
                     qDebug() << "AndroidSDRDriverInputTCPHandler::dataReadyRead: Unknown protocol: " << QByteArray((char *)metaData, 4).toHex() << " - " << protocol;
+                    m_dataSocket->disconnectFromHost();
+                    return;
                 }
+
+                m_readMetaData = true;
             }
             else
             {
                 qDebug() << "AndroidSDRDriverInputTCPHandler::dataReadyRead: Failed to read protocol ID";
             }
-            m_readMetaData = true;
         }
         else
         {
