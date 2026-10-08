@@ -340,7 +340,7 @@ int SigMFConverter<float, 16, 32, false, false, false>::convert(FixReal *convert
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromLE<float>(sigMFBuf[2*is]) * 32768.0f;
+        convertBuffer[2*is]   = sigMFFromLE<float>(sigMFBuf[is]) * 32768.0f;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -357,7 +357,7 @@ int SigMFConverter<float, 24, 32, false, false, false>::convert(FixReal *convert
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromLE<float>(sigMFBuf[2*is]) * 8388608.0f;
+        convertBuffer[2*is]   = sigMFFromLE<float>(sigMFBuf[is]) * 8388608.0f;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -442,7 +442,7 @@ int SigMFConverter<float, 16, 32, false, true, false>::convert(FixReal *convertB
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromBE<float>(sigMFBuf[2*is]) * 32768.0f;
+        convertBuffer[2*is]   = sigMFFromBE<float>(sigMFBuf[is]) * 32768.0f;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -459,7 +459,7 @@ int SigMFConverter<float, 24, 32, false, true, false>::convert(FixReal *convertB
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromBE<float>(sigMFBuf[2*is]) * 8388608.0f;
+        convertBuffer[2*is]   = sigMFFromBE<float>(sigMFBuf[is]) * 8388608.0f;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -548,7 +548,7 @@ int SigMFConverter<int8_t, 16, 8, false, false, false>::convert(FixReal *convert
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is] = sigMFBuf[2*is] << 8;
+        convertBuffer[2*is] = sigMFBuf[is] << 8;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -565,7 +565,7 @@ int SigMFConverter<int8_t, 24, 8, false, false, false>::convert(FixReal *convert
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is] = sigMFBuf[2*is] << 16;
+        convertBuffer[2*is] = sigMFBuf[is] << 16;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -649,7 +649,7 @@ int SigMFConverter<uint8_t, 16, 8, false, false, false>::convert(FixReal *conver
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is] = (sigMFBuf[2*is] - 128) << 8;
+        convertBuffer[2*is] = (sigMFBuf[is] - 128) << 8;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -665,7 +665,7 @@ int SigMFConverter<uint8_t, 24, 8, false, false, false>::convert(FixReal *conver
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is] = (sigMFBuf[2*is] - 128) << 16;
+        convertBuffer[2*is] = (sigMFBuf[is] - 128) << 16;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -758,7 +758,7 @@ int SigMFConverter<int16_t, 16, 16, false, false, false>::convert(FixReal *conve
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromLE<int16_t>(sigMFBuf[2*is]);
+        convertBuffer[2*is]   = sigMFFromLE<int16_t>(sigMFBuf[is]);
         convertBuffer[2*is+1] = 0;
     }
 
@@ -775,7 +775,7 @@ int SigMFConverter<int16_t, 24, 16, false, false, false>::convert(FixReal *conve
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromLE<int16_t>(sigMFBuf[2*is] << 8);
+        convertBuffer[2*is]   = sigMFFromLE<int16_t>(sigMFBuf[is] << 8);
         convertBuffer[2*is+1] = 0;
     }
 
@@ -860,7 +860,7 @@ int SigMFConverter<int16_t, 16, 16, false, true, false>::convert(FixReal *conver
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromBE<int16_t>(sigMFBuf[2*is]);
+        convertBuffer[2*is]   = sigMFFromBE<int16_t>(sigMFBuf[is]);
         convertBuffer[2*is+1] = 0;
     }
 
@@ -877,7 +877,7 @@ int SigMFConverter<int16_t, 24, 16, false, true, false>::convert(FixReal *conver
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromBE<int16_t>(sigMFBuf[2*is]) << 8;
+        convertBuffer[2*is]   = sigMFFromBE<int16_t>(sigMFBuf[is]) << 8;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -967,7 +967,7 @@ int SigMFConverter<uint16_t, 16, 16, false, false, false>::convert(FixReal *conv
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromLE<uint16_t>(sigMFBuf[2*is]) - 32768;
+        convertBuffer[2*is]   = sigMFFromLE<uint16_t>(sigMFBuf[is]) - 32768;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -984,7 +984,7 @@ int SigMFConverter<uint16_t, 24, 16, false, false, false>::convert(FixReal *conv
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = (sigMFFromLE<uint16_t>(sigMFBuf[2*is]) - 32768) << 8;
+        convertBuffer[2*is]   = (sigMFFromLE<uint16_t>(sigMFBuf[is]) - 32768) << 8;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1069,7 +1069,7 @@ int SigMFConverter<uint16_t, 16, 16, false, true, false>::convert(FixReal *conve
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromBE<uint16_t>(sigMFBuf[2*is]) - 32768;
+        convertBuffer[2*is]   = sigMFFromBE<uint16_t>(sigMFBuf[is]) - 32768;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1086,7 +1086,7 @@ int SigMFConverter<uint16_t, 24, 16, false, true, false>::convert(FixReal *conve
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = (sigMFFromBE<uint16_t>(sigMFBuf[2*is]) - 32768) << 8;
+        convertBuffer[2*is]   = (sigMFFromBE<uint16_t>(sigMFBuf[is]) - 32768) << 8;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1217,7 +1217,7 @@ int SigMFConverter<int32_t, 16, 32, false, false, false>::convert(FixReal *conve
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromLE<int32_t>(sigMFBuf[2*is]) >> 16;
+        convertBuffer[2*is]   = sigMFFromLE<int32_t>(sigMFBuf[is]) >> 16;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1234,7 +1234,7 @@ int SigMFConverter<int32_t, 24, 32, false, false, false>::convert(FixReal *conve
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromLE<int32_t>(sigMFBuf[2*is]) >> 8;
+        convertBuffer[2*is]   = sigMFFromLE<int32_t>(sigMFBuf[is]) >> 8;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1319,7 +1319,7 @@ int SigMFConverter<int32_t, 16, 32, false, true, false>::convert(FixReal *conver
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromBE<int32_t>(sigMFBuf[2*is]) >> 16;
+        convertBuffer[2*is]   = sigMFFromBE<int32_t>(sigMFBuf[is]) >> 16;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1336,7 +1336,7 @@ int SigMFConverter<int32_t, 24, 32, false, true, false>::convert(FixReal *conver
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = sigMFFromBE<int32_t>(sigMFBuf[2*is]) >> 8;
+        convertBuffer[2*is]   = sigMFFromBE<int32_t>(sigMFBuf[is]) >> 8;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1425,7 +1425,7 @@ int SigMFConverter<uint32_t, 16, 32, false, false, false>::convert(FixReal *conv
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = (sigMFFromLE<uint32_t>(sigMFBuf[2*is]) >> 16) - 32768;
+        convertBuffer[2*is]   = (sigMFFromLE<uint32_t>(sigMFBuf[is]) >> 16) - 32768;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1442,7 +1442,7 @@ int SigMFConverter<uint32_t, 24, 32, false, false, false>::convert(FixReal *conv
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = (sigMFFromLE<uint32_t>(sigMFBuf[2*is]) >> 8) - 8388608;
+        convertBuffer[2*is]   = (sigMFFromLE<uint32_t>(sigMFBuf[is]) >> 8) - 8388608;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1527,7 +1527,7 @@ int SigMFConverter<uint32_t, 16, 32, false, true, false>::convert(FixReal *conve
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = (sigMFFromBE<uint32_t>(sigMFBuf[2*is]) >> 16) - 32768;
+        convertBuffer[2*is]   = (sigMFFromBE<uint32_t>(sigMFBuf[is]) >> 16) - 32768;
         convertBuffer[2*is+1] = 0;
     }
 
@@ -1544,7 +1544,7 @@ int SigMFConverter<uint32_t, 24, 32, false, true, false>::convert(FixReal *conve
 
     for (int is = 0; is < nbSamples; is++)
     {
-        convertBuffer[2*is]   = (sigMFFromBE<uint32_t>(sigMFBuf[2*is]) >> 8) - 8388608;
+        convertBuffer[2*is]   = (sigMFFromBE<uint32_t>(sigMFBuf[is]) >> 8) - 8388608;
         convertBuffer[2*is+1] = 0;
     }
 

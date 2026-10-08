@@ -33,6 +33,12 @@ FIRFilterRRC::FIRFilterRRC() :
 
 void FIRFilterRRC::create(float symbolRate, float rolloff, int symbolSpan, Normalization normalization)
 {
+    if (!std::isfinite(symbolRate) || (symbolRate <= 0.0f) || (symbolRate > 0.5f)
+        || !std::isfinite(rolloff) || (symbolSpan <= 0))
+    {
+        return;
+    }
+
     m_symbolRate = symbolRate;
     m_rolloff = rolloff;
 
@@ -162,6 +168,10 @@ float FIRFilterRRC::computeRRCTap(float t, float rolloff) const
 
 FIRFilterRRC::Complex FIRFilterRRC::filter(const Complex& input)
 {
+    if (m_samples.empty()) {
+        return Complex(0.0f, 0.0f);
+    }
+
     const int numTaps = static_cast<int>(m_samples.size());
     const int halfTaps = static_cast<int>(m_taps.size()) - 1;
 

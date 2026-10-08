@@ -35,6 +35,13 @@ FFTFactory::~FFTFactory()
             delete eIt->m_engine;
         }
     }
+
+    for (auto mIt = m_invFFTEngineBySize.begin(); mIt != m_invFFTEngineBySize.end(); ++mIt)
+    {
+        for (auto eIt = mIt->second.begin(); eIt != mIt->second.end(); ++eIt) {
+            delete eIt->m_engine;
+        }
+    }
 }
 
 void FFTFactory::preallocate(

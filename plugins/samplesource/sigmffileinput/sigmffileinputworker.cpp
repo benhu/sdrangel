@@ -151,7 +151,8 @@ void SigMFFileInputWorker::setBuffers(std::size_t chunksize)
     if (chunksize > m_bufsize)
     {
         m_bufsize = chunksize;
-        int nbSamples = m_bufsize/(2 * m_samplebytes);
+        const std::size_t components = m_metaInfo->m_dataType.m_complex ? 2U : 1U;
+        const std::size_t nbSamples = m_bufsize / (components * m_samplebytes);
 
         if (m_fileBuf == 0)
         {

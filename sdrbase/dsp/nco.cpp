@@ -20,6 +20,7 @@
 
 #include <QtGlobal>
 #include <cmath>
+#include <limits>
 #include "dsp/nco.h"
 
 Real NCO::m_table[NCO::TableSize];
@@ -42,7 +43,7 @@ NCO::NCO() :
     m_phaseIncrement(0),
     m_phase(0),
     m_phaseDithered(0),
-    m_lfsr(0),
+    m_lfsr(1),
     m_ditherMask(0)
 {
 	initTable();
@@ -59,11 +60,26 @@ uint64_t NCO::prsg63()
 
 void NCO::setFreq(Real freq, Real sampleRate, bool integerPhase, int ditherBits)
 {
-	m_phaseIncrement = (Phase) (qint64) std::round((freq * pow(2.0, PhaseBits)) / sampleRate);
+	if (!std::isfinite(freq) || !std::isfinite(sampleRate) || (sampleRate <= 0)) {
+		return;
+	}
+
+	const double phaseIncrement = std::round((freq * pow(2.0, PhaseBits)) / sampleRate);
+	if ((phaseIncrement < std::numeric_limits<qint64>::min()) || (phaseIncrement > std::numeric_limits<qint64>::max())) {
+		return;
+	}
+
+	m_phaseIncrement = static_cast<Phase>(static_cast<qint64>(phaseIncrement));
 	if (integerPhase) {
 		m_phaseIncrement &= ~FracMask;
 	}
-	m_ditherMask = (1ull << ditherBits) - 1;
+	if (ditherBits <= 0) {
+		m_ditherMask = 0;
+	} else if (ditherBits >= static_cast<int>(PhaseBits)) {
+		m_ditherMask = ~Phase(0);
+	} else {
+		m_ditherMask = (Phase(1) << ditherBits) - 1;
+	}
 	qDebug("NCO freq: %f phase inc: %u sr: %f dither: %d", freq, m_phaseIncrement, sampleRate, ditherBits);
 }
 

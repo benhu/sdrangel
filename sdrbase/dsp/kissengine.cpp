@@ -29,6 +29,10 @@ QString KissEngine::getName() const
 
 void KissEngine::configure(int n, bool inverse)
 {
+	if (n <= 0) {
+		return;
+	}
+
 	m_fft.configure(n, inverse);
 	if(n > (int) m_in.size())
 		m_in.resize(n);
@@ -38,6 +42,10 @@ void KissEngine::configure(int n, bool inverse)
 
 void KissEngine::transform()
 {
+	if (m_in.empty() || m_out.empty()) {
+		return;
+	}
+
     PROFILER_START()
 
 	m_fft.transform(&m_in[0], &m_out[0]);
@@ -47,12 +55,12 @@ void KissEngine::transform()
 
 Complex* KissEngine::in()
 {
-	return &m_in[0];
+	return m_in.empty() ? nullptr : m_in.data();
 }
 
 Complex* KissEngine::out()
 {
-	return &m_out[0];
+	return m_out.empty() ? nullptr : m_out.data();
 }
 
 void KissEngine::setReuse(bool reuse)

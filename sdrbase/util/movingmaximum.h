@@ -19,6 +19,7 @@
 #define INCLUDE_UTIL_MOVINGMAXIMUM_H
 
 #include <algorithm>
+#include <cmath>
 #include <QDebug>
 
 // Calculates moving maximum over a number of samples
@@ -33,6 +34,9 @@ public:
     {
         reset();
     }
+
+    MovingMaximum(const MovingMaximum&) = delete;
+    MovingMaximum& operator=(const MovingMaximum&) = delete;
 
     ~MovingMaximum()
     {
@@ -49,13 +53,18 @@ public:
     void setSize(int size)
     {
         delete[] m_samples;
-        m_samples = new T[size]();
+        size = std::max(size, 0);
+        m_samples = size == 0 ? nullptr : new T[size]();
         m_size = size;
         reset();
     }
 
     void operator()(T sample)
     {
+        if (m_size == 0) {
+            return;
+        }
+
         if (m_count < m_size)
         {
             m_samples[m_count++] = sample;
@@ -95,4 +104,3 @@ private:
 };
 
 #endif /* INCLUDE_UTIL_MOVINGMAXIMUM_H */
-
