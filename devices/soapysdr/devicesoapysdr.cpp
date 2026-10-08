@@ -45,7 +45,7 @@ void DeviceSoapySDR::closeSoapySdr(SoapySDR::Device *device)
 
 SoapySDR::Device *DeviceSoapySDR::openopenSoapySDRFromSequence(uint32_t sequence, const QString& hardwareUserArguments)
 {
-    if (sequence > m_scanner.getNbDevices())
+    if (sequence >= m_scanner.getNbDevices())
     {
         return 0;
     }

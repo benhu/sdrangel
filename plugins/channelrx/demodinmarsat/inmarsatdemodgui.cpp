@@ -734,6 +734,12 @@ void InmarsatDemodGUI::decodeAppendHTML(QString& decode, const QString& title, c
 // Add row to table
 void InmarsatDemodGUI::packetReceived(const QByteArray& bytes, QDateTime dateTime)
 {
+    if (bytes.size() != static_cast<int>(sizeof(inmarsatc::decoder::Decoder::decoder_result)))
+    {
+        qWarning() << "InmarsatDemodGUI::packetReceived: invalid packet size" << bytes.size();
+        return;
+    }
+
     inmarsatc::decoder::Decoder::decoder_result decoderResult;
 
     memcpy(&decoderResult, bytes.data(), sizeof(decoderResult));

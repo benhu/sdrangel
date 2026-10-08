@@ -171,10 +171,11 @@ int MorseDecoderWorker::processBuffer(QByteArray& bytesBuffer)
             return 0;
         }
 
+        const uint32_t byteOffset = (samplesTotal - samplesHave) * 2;
         samplesHave -= nMaxBytes/2;
         // qDebug("MorseDecoderWorker::processBuffer::cbWaveformInp: samplesTotal: %u samplesHave: %u nMaxBytes: %u",
         //    samplesTotal, samplesHave, nMaxBytes);
-        memcpy(data, bytesBuffer.data() + (samplesTotal - samplesHave)*2, nMaxBytes);
+        memcpy(data, bytesBuffer.data() + byteOffset, nMaxBytes);
         return (int) nMaxBytes;
     };
 

@@ -199,7 +199,7 @@ public:
         {
             int idx = (i + offset) % m_data.size();
             qint16 l = conv(m_data[idx]);
-            qint16 r = conv(m_data[idx+1]);
+            qint16 r = conv(m_data[(idx + 1) % m_data.size()]);
             wavFile.write(l, r);
         }
         wavFile.stopRecording();

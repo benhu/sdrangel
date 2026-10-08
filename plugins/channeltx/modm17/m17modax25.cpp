@@ -35,7 +35,6 @@ QByteArray M17ModAX25::makePacket(const QString& callsign, const QString& to, co
     uint8_t *p;
     crc16x25 crc;
     uint16_t crcValue;
-    int len;
     int packet_length;
 
     // Create AX.25 packet
@@ -54,9 +53,16 @@ QByteArray M17ModAX25::makePacket(const QString& callsign, const QString& to, co
     // PID
     *p++ = m_ax25PID;
     // Data
-    len = data.length();
-    memcpy(p, data.toUtf8(), len);
-    p += len;
+    const QByteArray payload = data.toUtf8();
+    static constexpr std::size_t maxPacketSize = 797; // The M17 type byte is added by the caller.
+    const std::size_t available = maxPacketSize - (p - packet.data()) - 2; // Reserve CRC bytes.
+    if (static_cast<std::size_t>(payload.size()) > available)
+    {
+        qWarning("M17ModAX25::makePacket: payload is too large");
+        return QByteArray();
+    }
+    memcpy(p, payload.constData(), payload.size());
+    p += payload.size();
     // CRC (do not include flags)
     crc.calculate(crc_start, p-crc_start);
     crcValue = crc.get();
@@ -78,8 +84,8 @@ uint8_t *M17ModAX25::ax25_address(uint8_t *p, QString address, uint8_t crrl)
     uint8_t ssid = 0;
     bool hyphenSeen = false;
 
-    len = address.length();
     b = address.toUtf8();
+    len = b.size();
     ssid = 0;
 
     for (i = 0; i < 6; i++)
@@ -103,7 +109,7 @@ uint8_t *M17ModAX25::ax25_address(uint8_t *p, QString address, uint8_t crrl)
         }
     }
 
-    if (b[i] == '-') {
+    if ((i < len) && (b[i] == '-')) {
         ax25_ssid(b, i, len, ssid);
     }
 

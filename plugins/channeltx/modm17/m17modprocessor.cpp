@@ -91,8 +91,10 @@ bool M17ModProcessor::handleMessage(const Message& cmd)
         }
 
         QByteArray packetBytes = modAX25.makePacket(notif.getCall(), notif.getTo(), notif.getVia(), strData);
+        if (packetBytes.isEmpty()) {
+            return true;
+        }
         packetBytes.prepend(0x02); // APRS standard type
-        packetBytes.truncate(798); // Maximum packet size is 798 payload + 2 bytes CRC = 800 bytes (32*25)
         processPacket(notif.getSourceCall(), notif.getDestCall(), notif.getCAN(), packetBytes);
         return true;
     }

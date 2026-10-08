@@ -162,8 +162,11 @@ bool AudioCATSISOCATWorker::handleMessage(const Message& message)
     else if (MsgPollTimerConnect::match(message))
     {
         qDebug("AudioCATSISOCATWorker::handleMessage: MsgPollTimerConnect");
-        m_pollTimer = new QTimer();
-        connect(m_pollTimer, SIGNAL(timeout()), this, SLOT(pollingTick()));
+        if (!m_pollTimer)
+        {
+            m_pollTimer = new QTimer(this);
+            connect(m_pollTimer, SIGNAL(timeout()), this, SLOT(pollingTick()));
+        }
         m_pollTimer->start(m_settings.m_catPollingMs);
 
         return true;

@@ -475,11 +475,15 @@ void RTPUDPTransmitter::readRTPPendingDatagrams()
         QHostAddress remoteAddress;
         quint16 remotePort;
         qint64 pendingDataSize = m_rtpsock->pendingDatagramSize();
-        qint64 bytesRead = m_rtpsock->readDatagram(m_rtpBuffer, pendingDataSize, &remoteAddress, &remotePort);
+        qint64 bytesRead = m_rtpsock->readDatagram(m_rtpBuffer, m_absoluteMaxPackSize, &remoteAddress, &remotePort);
         qDebug("RTPUDPTransmitter::readRTPPendingDatagrams: %lld bytes read from %s:%d",
                 bytesRead,
                 qPrintable(remoteAddress.toString()),
                 remotePort);
+
+        if ((bytesRead <= 0) || (pendingDataSize > m_absoluteMaxPackSize)) {
+            continue;
+        }
 
         RTPAddress rtpAddress;
         rtpAddress.setAddress(remoteAddress);
@@ -521,11 +525,15 @@ void RTPUDPTransmitter::readRTCPPendingDatagrams()
         QHostAddress remoteAddress;
         quint16 remotePort;
         qint64 pendingDataSize = m_rtcpsock->pendingDatagramSize();
-        qint64 bytesRead = m_rtcpsock->readDatagram(m_rtcpBuffer, pendingDataSize, &remoteAddress, &remotePort);
+        qint64 bytesRead = m_rtcpsock->readDatagram(m_rtcpBuffer, m_absoluteMaxPackSize, &remoteAddress, &remotePort);
         qDebug("RTPUDPTransmitter::readRTCPPendingDatagrams: %lld bytes read from %s:%d",
                 bytesRead,
                 qPrintable(remoteAddress.toString()),
                 remotePort);
+
+        if ((bytesRead <= 0) || (pendingDataSize > m_absoluteMaxPackSize)) {
+            continue;
+        }
 
         RTPAddress rtpAddress;
         rtpAddress.setAddress(remoteAddress);
@@ -563,5 +571,4 @@ bool RTPUDPTransmitter::ShouldAcceptData(const RTPAddress& rtpAddress)
 }
 
 } // namespace
-
 

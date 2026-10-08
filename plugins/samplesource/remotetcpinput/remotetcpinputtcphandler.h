@@ -209,6 +209,7 @@ private:
     QTcpSocket *m_tcpSocket;
     QWebSocket *m_webSocket;
     char *m_tcpBuf;
+    qsizetype m_tcpBufSize;
     SampleSinkFifo *m_sampleFifo;
     ReplayBuffer<FixReal> *m_replayBuffer;
     MessageQueue m_inputMessageQueue;  //!< Queue for asynchronous inbound communication

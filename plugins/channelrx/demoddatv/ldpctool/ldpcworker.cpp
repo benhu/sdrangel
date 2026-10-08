@@ -112,6 +112,12 @@ void LDPCWorker::process(QByteArray data)
 
     int iosize = m_codeLen * sizeof(*m_code);
 
+    if (data.size() != iosize)
+    {
+        qWarning() << "LDPCWorker::process: invalid input size" << data.size() << "expected" << iosize;
+        return;
+    }
+
     m_mutexIn.lock();
     m_dataIn.append(data);
 

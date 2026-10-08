@@ -39,6 +39,7 @@ RemoteTCPInputTCPHandler::RemoteTCPInputTCPHandler(SampleSinkFifo *sampleFifo, D
     m_tcpSocket(nullptr),
     m_webSocket(nullptr),
     m_tcpBuf(nullptr),
+    m_tcpBufSize(0),
     m_sampleFifo(sampleFifo),
     m_replayBuffer(replayBuffer),
     m_messageQueueToInput(nullptr),
@@ -74,7 +75,8 @@ RemoteTCPInputTCPHandler::RemoteTCPInputTCPHandler(SampleSinkFifo *sampleFifo, D
     m_magsqCount(0)
 {
     m_sampleFifo->setSize(5000000); // Start with large FIFO, to avoid having to resize
-    m_tcpBuf = new char[m_sampleFifo->size()*2*4];
+    m_tcpBufSize = m_sampleFifo->size()*2*4;
+    m_tcpBuf = new char[m_tcpBufSize];
     m_timer.setInterval(50); // Previously 125, but this results in an obviously slow spectrum refresh rate
     connect(&m_reconnectTimer, SIGNAL(timeout()), this, SLOT(reconnect()));
     m_reconnectTimer.setSingleShot(true);
@@ -540,7 +542,8 @@ void RemoteTCPInputTCPHandler::applySettings(const RemoteTCPInputSettings& setti
                 qDebug() << "RemoteTCPInputTCPHandler::applySettings: Resizing sample FIFO from " << m_sampleFifo->size() << "to" << settings.m_channelSampleRate;
                 m_sampleFifo->setSize(settings.m_channelSampleRate);
                 delete[] m_tcpBuf;
-                m_tcpBuf = new char[m_sampleFifo->size()*2*4];
+                m_tcpBufSize = m_sampleFifo->size()*2*4;
+                m_tcpBuf = new char[m_tcpBufSize];
                 m_fillBuffer = true; // So we reprime FIFO
             }
             // Protocol only seems to allow changing decimation
@@ -630,7 +633,8 @@ void RemoteTCPInputTCPHandler::applySettings(const RemoteTCPInputSettings& setti
                 qDebug() << "RemoteTCPInputTCPHandler::applySettings: Resizing sample FIFO from " << m_sampleFifo->size() << "to" << settings.m_channelSampleRate;
                 m_sampleFifo->setSize(settings.m_channelSampleRate);
                 delete[] m_tcpBuf;
-                m_tcpBuf = new char[m_sampleFifo->size()*2*4];
+                m_tcpBufSize = m_sampleFifo->size()*2*4;
+                m_tcpBuf = new char[m_tcpBufSize];
                 m_fillBuffer = true; // So we reprime FIFO
             }
             if (m_sdra) {
@@ -1347,6 +1351,18 @@ void RemoteTCPInputTCPHandler::processSpyServerMetaData()
         }
         else if (m_state == DATA)
         {
+            const bool validDeviceMessage = (m_spyServerHeader.m_message == SpyServerProtocol::DeviceMessage)
+                && (m_spyServerHeader.m_size == sizeof(SpyServerProtocol::Device));
+            const bool validStateMessage = (m_spyServerHeader.m_message == SpyServerProtocol::StateMessage)
+                && (m_spyServerHeader.m_size == sizeof(SpyServerProtocol::State));
+            if ((!validDeviceMessage && !validStateMessage) || (m_spyServerHeader.m_size > static_cast<quint32>(m_tcpBufSize)))
+            {
+                qWarning() << "RemoteTCPInputTCPHandler::processSpyServerMetaData: invalid message size"
+                    << m_spyServerHeader.m_message << m_spyServerHeader.m_size;
+                m_dataSocket->close();
+                return;
+            }
+
             if (m_dataSocket->bytesAvailable() >= m_spyServerHeader.m_size)
             {
                 qint64 bytesRead = m_dataSocket->read(&m_tcpBuf[0], m_spyServerHeader.m_size);
@@ -1499,6 +1515,22 @@ void RemoteTCPInputTCPHandler::processSpyServerData(int requiredBytes, bool clea
         }
         else if (m_state == DATA)
         {
+            if (m_spyServerHeader.m_size > static_cast<quint32>(m_tcpBufSize))
+            {
+                qWarning() << "RemoteTCPInputTCPHandler::processSpyServerData: message is too large" << m_spyServerHeader.m_size;
+                m_dataSocket->close();
+                return;
+            }
+
+            if ((m_spyServerHeader.m_message == SpyServerProtocol::StateMessage)
+                && (m_spyServerHeader.m_size != sizeof(SpyServerProtocol::State)))
+            {
+                qWarning() << "RemoteTCPInputTCPHandler::processSpyServerData: invalid state message size"
+                    << m_spyServerHeader.m_size;
+                m_dataSocket->close();
+                return;
+            }
+
             int bytes;
 
             if ((m_spyServerHeader.m_message >= SpyServerProtocol::IQ8MMessage) && (m_spyServerHeader.m_message <= SpyServerProtocol::IQ32Message)) {
@@ -1798,6 +1830,12 @@ void RemoteTCPInputTCPHandler::processCommands()
                     }
                     default:
                         m_commandLength = RemoteTCPProtocol::extractUInt32(&buf[1]);
+                        if (m_commandLength > static_cast<quint32>(m_tcpBufSize))
+                        {
+                            qWarning() << "RemoteTCPInputTCPHandler::processCommands: command is too large" << m_commandLength;
+                            m_dataSocket->close();
+                            return;
+                        }
                         m_state = DATA;
                     }
                 }
@@ -1829,6 +1867,12 @@ void RemoteTCPInputTCPHandler::processCommands()
                     case RemoteTCPProtocol::dataIQFLAC:
                     {
                         qsizetype s = m_compressedData.size();
+                        if ((s > m_tcpBufSize) || (m_commandLength > static_cast<quint32>(m_tcpBufSize - s)))
+                        {
+                            qWarning() << "RemoteTCPInputTCPHandler::processCommands: compressed data buffer limit exceeded";
+                            m_dataSocket->close();
+                            return;
+                        }
                         m_compressedData.resize(s + m_commandLength);
                         qint64 bytesRead = m_dataSocket->read(&m_compressedData.data()[s], m_commandLength);
                         m_compressedFrames++;
@@ -1907,6 +1951,12 @@ void RemoteTCPInputTCPHandler::processCommands()
                     case RemoteTCPProtocol::dataPosition:
                     {
                         char pos[4+4+4];
+                        if (m_commandLength != sizeof(pos))
+                        {
+                            qWarning() << "RemoteTCPInputTCPHandler::processCommands: invalid position size" << m_commandLength;
+                            m_dataSocket->close();
+                            return;
+                        }
                         qint64 bytesRead = m_dataSocket->read(pos, m_commandLength);
                         if (bytesRead == m_commandLength)
                         {
@@ -1928,6 +1978,12 @@ void RemoteTCPInputTCPHandler::processCommands()
                     case RemoteTCPProtocol::dataDirection:
                     {
                         char dir[4+4+4];
+                        if (m_commandLength != sizeof(dir))
+                        {
+                            qWarning() << "RemoteTCPInputTCPHandler::processCommands: invalid direction size" << m_commandLength;
+                            m_dataSocket->close();
+                            return;
+                        }
                         qint64 bytesRead = m_dataSocket->read(dir, m_commandLength);
                         if (bytesRead == m_commandLength)
                         {
@@ -1948,21 +2004,22 @@ void RemoteTCPInputTCPHandler::processCommands()
 
                     case RemoteTCPProtocol::sendMessage:
                     {
-                        char *buf = new char[m_commandLength];
-                        qint64 bytesRead = m_dataSocket->read(buf, m_commandLength);
+                        QByteArray message;
+                        message.resize(m_commandLength);
+                        qint64 bytesRead = m_dataSocket->read(message.data(), m_commandLength);
 
-                        if (bytesRead == m_commandLength)
+                        if ((bytesRead == m_commandLength) && (m_commandLength >= 3))
                         {
-                            bool broadcast = (bool) buf[0];
-                            int i;
-                            for (i = 1; i < (int) m_commandLength; i++)
+                            const qsizetype separator = message.indexOf('\0', 1);
+                            if (separator < 0)
                             {
-                                if (buf[i] == '\0') {
-                                    break;
-                                }
+                                qWarning() << "RemoteTCPInputTCPHandler::processCommands: malformed message command";
+                                m_dataSocket->close();
+                                return;
                             }
-                            QString callsign = QString::fromUtf8(&buf[1]);
-                            QString text = QString::fromUtf8(&buf[i+1]);
+                            bool broadcast = (bool) message[0];
+                            QString callsign = QString::fromUtf8(message.constData() + 1, separator - 1);
+                            QString text = QString::fromUtf8(message.constData() + separator + 1, message.size() - separator - 1);
 
                             qDebug() << "RemoteTCPInputTCPHandler::processCommands: Message " << m_dataSocket->peerAddress() << m_dataSocket->peerPort() << callsign << broadcast << text;
                             if (m_messageQueueToGUI) {
@@ -1973,7 +2030,6 @@ void RemoteTCPInputTCPHandler::processCommands()
                         {
                             qDebug() << "RemoteTCPInputTCPHandler::processCommands: Failed to read:" << bytesRead << "/" << m_commandLength;
                         }
-                        delete[] buf;
                         break;
                     }
 
