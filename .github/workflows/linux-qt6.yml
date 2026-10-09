@@ -129,7 +129,8 @@ jobs:
           if [[ "${{ github.ref_name }}" == "linux_github_release" ]]; then
             echo "version=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
           else
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            version=${GITHUB_REF_NAME#v}
+            echo "version=${version//\//-}" >> "$GITHUB_OUTPUT"
           fi
       - name: Rename
         run: mv ../sdrangel_*_arm64.deb sdrangel_${{ steps.get_version.outputs.version }}_debian-trixie_arm64.deb
