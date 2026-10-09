@@ -83,3 +83,63 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: sdrangel_${{ steps.get_version.outputs.version }}_${{ matrix.os }}_${{ matrix.arch }}.deb
+
+  build_debian_trixie_arm64:
+    name: Debian Trixie Qt6 arm64
+    runs-on: ubuntu-26.04-arm
+    container: debian:trixie
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Prepare build container
+        run: |
+          apt-get update
+          apt-get -y install git ca-certificates sudo
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get -y install build-essential cmake git xxd \
+            devscripts fakeroot debhelper libfftw3-dev libopengl-dev \
+            qt6-base-dev qt6-base-private-dev qt6-scxml-dev \
+            qt6-multimedia-dev qt6-positioning-dev qt6-location-dev qt6-websockets-dev qt6-webengine-dev \
+            qt6-serialport-dev qt6-speech-dev qt6-charts-dev qt6-svg-dev qt6-declarative-dev \
+            qt6-tools-dev qt6-tools-dev-tools libqt6quick6 qt6-location-plugins \
+            qml6-module-qtlocation qml6-module-qtpositioning qml6-module-qtquick-window \
+            qml6-module-qtquick-dialogs qml6-module-qtquick-controls qml6-module-qtquick-layouts \
+            qml6-module-qt5compat-graphicaleffects qt6-speech-speechd-plugin \
+            libfaad-dev libflac-dev zlib1g-dev \
+            libusb-1.0-0-dev libhidapi-dev libboost-all-dev libasound2-dev libopencv-dev libopencv-imgcodecs-dev \
+            libxml2-dev bison flex ffmpeg libavcodec-dev libavformat-dev \
+            libopus-dev libcodec2-dev libairspy-dev libhackrf-dev \
+            libbladerf-dev libsoapysdr-dev libiio-dev libuhd-dev libhamlib-dev libunwind-dev \
+            libavahi-client-dev libavahi-common-dev libaio-dev \
+            python3-mako python3-cheetah python3-numpy \
+            autoconf automake libtool ninja-build
+          bash cmake/ci/build_sdrplay.sh
+      - name: Build SDRangel
+        run: debuild -eQT_VERSION=6 -i -us -uc -b
+      - name: Get version
+        id: get_version
+        run: |
+          if [[ "${{ github.ref_name }}" == "linux_github_release" ]]; then
+            echo "version=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Rename
+        run: mv ../sdrangel_*_arm64.deb sdrangel_${{ steps.get_version.outputs.version }}_debian-trixie_arm64.deb
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdrangel_${{ steps.get_version.outputs.version }}_debian-trixie_arm64.deb
+          path: sdrangel_${{ steps.get_version.outputs.version }}_debian-trixie_arm64.deb
+      - name: Upload release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sdrangel_${{ steps.get_version.outputs.version }}_debian-trixie_arm64.deb
